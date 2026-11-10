@@ -15,7 +15,7 @@ const daysAgo = (n) => {
   d.setDate(d.getDate() - n);
   return d.toISOString();
 };
-
+//async
 async function seedAll() {
   try {
     const salt = await bcryptjs.genSalt(10);

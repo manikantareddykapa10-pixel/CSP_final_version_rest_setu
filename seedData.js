@@ -11,7 +11,7 @@ connectDB();
 
 const userModel = require('./models/userModel.js');
 
-// Sample Users Data
+// Sample Users Data use
 const sampleUsers = [
   {
     role: "admin",
