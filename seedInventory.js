@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
-// Initialize SQLite
+// Initialize SQ Lite
 const { connectDB, getDb } = require('./config/db.js');
 connectDB();
 
