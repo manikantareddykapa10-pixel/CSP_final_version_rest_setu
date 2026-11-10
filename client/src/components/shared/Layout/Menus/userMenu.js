@@ -34,9 +34,4 @@ export const userMenu = [
         path:"/analytics",
         icon: "fa-solid fa-chart-bar"
     },
-    {
-        name: "Statistical Dashboard",
-        path:"/statistical-dashboard",
-        icon: "fa-solid fa-brain"
-    },
 ]

@@ -41,3 +41,60 @@
 .active i{
     color: rgb(134, 15, 15);
 }
+
+.sidebar-hospital-profile{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: calc(100% - 32px);
+    max-width: 190px;
+    margin: 48px auto 0;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+}
+
+.sidebar-hospital-profile img,
+.sidebar-hospital-profile-placeholder{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border: 3px solid rgba(255, 255, 255, 0.85);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-hospital-profile img{
+    object-fit: cover;
+}
+
+.sidebar-hospital-profile-placeholder i{
+    font-size: 3rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.sidebar-hospital-profile-name{
+    width: 100%;
+    overflow: hidden;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-hospital-profile:hover{
+    color: white;
+    opacity: 0.9;
+}
+
+@media (max-width: 767.98px){
+    .sidebar-hospital-profile{
+        max-width: 120px;
+        margin-top: 24px;
+    }
+}

@@ -33,6 +33,64 @@ const globalStatsController = async (req, res) => {
     return res.status(500).json({ success: false, message: 'Error fetching stats', error: error.message });
   }
 };
+
+const hospitalRequestStatsController = async (req, res) => {
+  try {
+    const db = getDb();
+    const userId = req.body.userId;
+    const hospital = db.prepare("SELECT role FROM users WHERE _id = ?").get(userId);
+
+    if (!hospital || hospital.role !== 'hospital') {
+      return res.status(403).json({ success: false, message: 'Hospital access required' });
+    }
+
+    const stats = db.prepare(`
+      SELECT
+        COUNT(*) as totalRequests,
+        SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) as acceptedRequests,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pendingRequests
+      FROM requests
+      WHERE requestedBy = ?
+    `).get(userId);
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        totalRequests: stats.totalRequests,
+        acceptedRequests: stats.acceptedRequests || 0,
+        pendingRequests: stats.pendingRequests || 0,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error fetching hospital request stats', error: error.message });
+  }
+};
+
+const hospitalDonationsController = async (req, res) => {
+  try {
+    const db = getDb();
+    const userId = req.body.userId;
+    const hospital = db.prepare("SELECT role FROM users WHERE _id = ?").get(userId);
+
+    if (!hospital || hospital.role !== 'hospital') {
+      return res.status(403).json({ success: false, message: 'Hospital access required' });
+    }
+
+    const donations = db.prepare(`
+      SELECT r._id, r.bloodGroup, r.patientName, r.patientPhoto, r.updatedAt as completedAt,
+        u.name as donorName, u.profilePicture as donorProfilePicture
+      FROM requests r
+      LEFT JOIN users u ON r.acceptedBy = u._id AND u.role = 'donar'
+      WHERE r.requestedBy = ? AND r.status = 'completed'
+      ORDER BY r.updatedAt DESC
+    `).all(userId);
+
+    return res.status(200).json({ success: true, donations });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error fetching hospital donations', error: error.message });
+  }
+};
+
 //GET BLOOD DATA
 const bloodGroupDetailsContoller = async (req, res) => {
   try {
@@ -103,4 +161,9 @@ const bloodGroupDetailsContoller = async (req, res) => {
   }
 };
 
-module.exports = { bloodGroupDetailsContoller, globalStatsController };
+module.exports = {
+  bloodGroupDetailsContoller,
+  globalStatsController,
+  hospitalRequestStatsController,
+  hospitalDonationsController,
+};

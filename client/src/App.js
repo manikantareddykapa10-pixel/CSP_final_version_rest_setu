@@ -7,16 +7,15 @@ import {Toaster} from 'react-hot-toast'
 import ProtectedRoute from './components/routes/ProtectedRoute';
 import PublicRoute from './components/routes/PublicRoute';
 import Donar from './pages/Dashboard/Donar';
+import EligibilityScore from './pages/Dashboard/EligibilityScore';
 import Hospital from './pages/Dashboard/Hospital';
 import OrganisationPage from './pages/Dashboard/OrganisationPage';
-import Consumer from './pages/Dashboard/Consumer';
 import Donation from './pages/Donation';
 import Analytics from './pages/Dashboard/Analytics';
 import DonarList from './pages/admin/DonarList';
 import HospitalList from './pages/admin/HospitalList';
 import OrgList from './pages/admin/OrgList';
 import AdminHome from './pages/admin/AdminHome';
-import AIDashboard from './pages/Dashboard/AIDashboard';
 import Chatbot from './components/Chatbot/Chatbot';
 import BloodMap from './pages/BloodMap';
 import RequestBlood from './pages/RequestBlood';
@@ -70,6 +69,11 @@ function App() {
               <Donar/>
             </ProtectedRoute>
         } />
+        <Route path="/eligibility-score" element={
+            <ProtectedRoute>
+              <EligibilityScore/>
+            </ProtectedRoute>
+        } />
         <Route path="/hospital" element={
             <ProtectedRoute>
               <Hospital/>
@@ -80,11 +84,6 @@ function App() {
               <Analytics/>
             </ProtectedRoute>
         } />
-        <Route path="/consumer" element={
-            <ProtectedRoute>
-              <Consumer/>
-            </ProtectedRoute>
-        } />
         <Route path="/donation" element={
             <ProtectedRoute>
               <Donation/>
@@ -93,11 +92,6 @@ function App() {
         <Route path="/organisation" element={
             <ProtectedRoute>
               <OrganisationPage/>
-            </ProtectedRoute>
-        } />
-        <Route path="/statistical-dashboard" element={
-            <ProtectedRoute>
-              <AIDashboard/>
             </ProtectedRoute>
         } />
         <Route path="/blood-map" element={

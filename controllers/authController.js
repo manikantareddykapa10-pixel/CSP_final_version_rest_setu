@@ -118,13 +118,28 @@ const updateProfileController = async (req, res) => {
   try {
     const { lat, lng, profilePicture } = req.body;
     const db = require('../config/db').getDb();
+    const currentUser = db.prepare('SELECT role FROM users WHERE _id = ?').get(req.body.userId);
+    if (!currentUser) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
     const allowedFields = ['name', 'email', 'phone', 'address', 'bloodGroup', 'isAvailable'];
+    if (currentUser.role === 'hospital') {
+      allowedFields.push('hospitalName', 'website');
+    }
     const updates = [];
     const values = [];
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
-        if (field === 'email' && !req.body.email.includes('@')) {
-          return res.status(400).json({ success: false, message: 'Invalid email address' });
+        if (field === 'email') {
+          if (typeof req.body.email !== 'string' || !req.body.email.includes('@')) {
+            return res.status(400).json({ success: false, message: 'Invalid email address' });
+          }
+          const existingEmail = db.prepare('SELECT _id FROM users WHERE email = ? AND _id != ?')
+            .get(req.body.email, req.body.userId);
+          if (existingEmail) {
+            return res.status(409).json({ success: false, message: 'Email is already in use' });
+          }
         }
         if (field === 'bloodGroup' && !['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].includes(req.body[field])) {
           return res.status(400).json({ success: false, message: 'Invalid blood group' });

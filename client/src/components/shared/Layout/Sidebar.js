@@ -79,26 +79,24 @@ const Sidebar = () => {
               </div>
               <div
                 className={`menu-item ${
-                  location.pathname === "/organisation" && "active"
+                  location.pathname === "/eligibility-score" && "active"
                 }`}
               >
-                <i className="fa-solid fa-building-ngo"></i>
-                <Link to="/organisation">Organisations</Link>
+                <i className="fa-solid fa-heart-pulse"></i>
+                <Link to="/eligibility-score">My Eligibility Score</Link>
               </div>
             </>
           )}
 
           {user?.role === "hospital" && (
-            <>
-              <div
-                className={`menu-item ${
-                  location.pathname === "/organisation" && "active"
-                }`}
-              >
-                <i className="fa-solid fa-building-ngo"></i>
-                <Link to="/organisation">Organisations</Link>
-              </div>
-            </>
+            <div
+              className={`menu-item ${
+                location.pathname === "/hospital" && "active"
+              }`}
+            >
+              <i className="fa-solid fa-hospital-user"></i>
+              <Link to="/hospital">My Hospital Profile</Link>
+            </div>
           )}
 
           {/* Blood Map - visible to all roles */}
@@ -116,44 +114,31 @@ const Sidebar = () => {
           )}
 
           {/* Analytics */}
-          {user?.role !== "admin" && (
+          {(user?.role === "organisation" || user?.role === "hospital") && (
             <div className={`menu-item ${location.pathname === "/analytics" && "active"}`}>
               <i className="fa-solid fa-chart-bar"></i>
               <Link to="/analytics">Analytics</Link>
             </div>
           )}
-
-          {/* Statistical Dashboard - visible to all roles */}
-          <div
-            className={`menu-item ${
-              location.pathname === "/statistical-dashboard" && "active"
-            }`}
-          >
-            <i className="fa-solid fa-brain"></i>
-            <Link to="/statistical-dashboard">Statistical Dashboard</Link>
-          </div>
-
-          {user?.role === "hospital" && (
-            <div
-              className={`menu-item ${
-                location.pathname === "/consumer" && "active"
-              }`}
-            >
-              <i className="fa-solid fa-users-between-lines"></i>
-              <Link to="/consumer">Consumer</Link>
-            </div>
-          )}
-          {user?.role === "donar" && (
-            <div
-              className={`menu-item ${
-                location.pathname === "/donation" && "active"
-              }`}
-            >
-              <i className="fa-solid fa-book-medical"></i>
-              <Link to="/donation">Donations Log</Link>
-            </div>
-          )}
         </div>
+        {user?.role === "hospital" && (
+          <Link
+            to="/hospital"
+            className="sidebar-hospital-profile"
+            aria-label="View hospital profile"
+          >
+            {user.profilePicture ? (
+            <img src={user.profilePicture} alt={user.hospitalName || "Hospital"} />
+            ) : (
+            <span className="sidebar-hospital-profile-placeholder" aria-hidden="true">
+              <i className="fa-solid fa-hospital"></i>
+            </span>
+            )}
+            <span className="sidebar-hospital-profile-name">
+            {user.hospitalName || "Hospital profile"}
+            </span>
+          </Link>
+        )}
       </div>
     </div>
   );

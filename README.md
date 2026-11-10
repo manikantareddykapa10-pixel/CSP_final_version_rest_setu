@@ -1,125 +1,233 @@
-# Blood Bridge
+# Rakt-Setu | Blood Bridge
 
-A real-time blood donation platform connecting donors, hospitals, and organisations.
+Rakt-Setu is a real-time blood donation and request coordination platform designed to help donors, hospitals, organisations, and admins work together efficiently during emergencies. The application connects blood request creators with eligible donors based on blood type, location, and availability, while also providing analytics, inventory monitoring, and AI-assisted decision support.
 
-## Stack
+## Project Overview
 
-**SERN** — SQLite, Express, React, Node.js
+This project is built as a full-stack web application using:
+- Frontend: React.js
+- Backend: Node.js + Express.js
+- Database: SQLite with better-sqlite3
+- Styling: Bootstrap
+- State Management: React state + Redux Toolkit
+- Security: JWT, bcrypt, Helmet, CORS, rate limiting
 
-## Features
+The app supports four main roles:
+- Admin
+- Donor
+- Hospital
+- Organisation
 
-- **User Roles:**
-  - Admin: View and manage registered donors, hospitals, and organisations.
-  - Donor: Set location, browse blood requests nearby, accept and fulfil them.
-  - Hospital: Manage blood inventory, request blood, track consumers.
-  - Organisation: Manage inventory, coordinate donors and hospitals, post blood requests.
+## Technology Stack
 
-- **Real-Time Blood Map:**
-  - Live map showing donor locations (blue) and blood requests (red/orange).
-  - Built with Leaflet + OpenStreetMap — no API key needed.
-  - Auto-refreshes every 15 seconds via client-side polling.
+### Frontend
+- React.js
+- Redux Toolkit (for app state and auth/session management)
+- Bootstrap (responsive UI components)
+- Leaflet + OpenStreetMap (live map visualization)
+- Axios / fetch-based API calls for backend communication
 
-- **Blood Request System:**
-  - Organisations and hospitals post urgent blood requests with location.
-  - Donors see requests nearby and accept them.
-  - Contact details revealed to both parties only after acceptance (bidirectional).
-  - Status notifications via polling every 8 seconds with toast alerts.
+### Backend
+- Node.js
+- Express.js
+- JWT for authentication
+- bcryptjs for password hashing
+- better-sqlite3 for SQLite integration
+- Helmet for HTTP security headers
+- CORS for cross-origin access control
+- express-rate-limit for request throttling
 
-- **Statistical Dashboard:**
-  - Blood demand prediction using moving average on last 90 days of inventory data.
-  - Donor matching using weighted scoring (blood type, proximity, availability, history).
-  - Inventory optimisation using threshold-based rules and expiry alerts.
-  - Rule-based chatbot for blood donation queries.
-  - Live stats pulled directly from the database.
+### Database
+- SQLite database file created automatically at runtime (`rakt-setu.db`)
+- Tables include:
+  - users
+  - requests
+  - inventory
+- Custom lightweight query abstraction supports Mongoose-style patterns for easier database reads and writes
 
-- **Authentication & Security:**
-  - JWT (JSON Web Tokens) for session management.
-  - Passwords hashed with bcrypt.
-  - Rate limiting — 1000 requests per 15 minutes general, 5 failed auth attempts per 15 minutes.
-  - Helmet.js for security headers.
-  - CORS configuration.
+### Features and Implementation Details
 
-- **Frontend:**
-  - React.js with Redux Toolkit for state management.
-  - Bootstrap for styling.
+## 1. User Authentication and Role Management
 
-- **Backend:**
-  - Node.js and Express.js, MVC architecture.
-  - SQLite (better-sqlite3) — file-based, no external database server needed.
-  - Custom query builder compatible with Mongoose-style syntax.
+Implemented in:
+- `controllers/authController.js`
+- `middleware/authMiddleware.js`
+- `routes/authRoute.js`
+- `config/db.js`
 
-## Getting Started
+How it works:
+- Users register with email, password, role, blood group, address, contact details, and location.
+- Passwords are hashed with `bcryptjs` before saving to the database.
+- Login verifies the user email and role, compares the password using bcrypt, then issues a JWT token.
+- JWT tokens are checked on protected routes through middleware to grant access only to authenticated users.
+- Role checking ensures users can only access the pages and APIs meant for their role.
 
-### Prerequisites
+Example:
+- Donors can browse and accept blood requests.
+- Hospitals can create requests and monitor donations.
+- Organisations can create and manage blood requests and inventory.
+- Admins can view system-wide data.
 
-- Node.js and npm
+## 2. Blood Request System
 
-### Installation
+Implemented in:
+- `controllers/requestController.js`
+- `routes/requestRoutes.js`
+- `config/db.js`
 
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd Rakt-Setu
-   ```
+How it works:
+- A blood request is stored in the `requests` table with fields such as:
+  - blood group
+  - requester ID
+  - status (`pending`, `accepted`, `completed`, `cancelled`)
+  - coordinates and address
+  - notes, patient name, photo, and supporting documents
+- Donors can view only open pending requests that match their blood type and distance.
+- When a donor accepts a request, the system updates the request with `acceptedBy` and changes status to `accepted`.
+- The donor and requester contact details are revealed only after acceptance, protecting privacy before that point.
+- The request lifecycle can also be completed or cancelled by authorized parties.
 
-2. **Backend Setup:**
-   ```bash
-   npm install
-   ```
+Distance logic:
+- The backend calculates geographical distance between donor and request coordinates using the Haversine-style approach.
+- Only nearby compatible requests are shown to each donor.
 
-3. **Frontend Setup:**
-   ```bash
-   cd client
-   npm install
-   cd ..
-   ```
+## 3. Real-Time Blood Map
 
-4. **Environment Configuration:**
+Implemented in:
+- Frontend map UI under `client/src/`
+- API endpoints returning donors and request locations
+- Leaflet/OpenStreetMap integration
 
-   **Backend (.env):**
-   ```env
-   PORT=8080
-   DEV_MODE=development
-   JWT_SECRET=your-secret-key
-   JWT_EXPIRE=7d
-   ALLOWED_ORIGINS=http://localhost:3000
-   RATE_LIMIT_MAX=1000
-   ```
+How it works:
+- Donor locations and blood request locations are rendered on a Leaflet map.
+- Blue markers represent donors and red/orange markers represent blood requests.
+- The frontend polls the backend every 15 seconds to refresh live data.
+- This creates a near-real-time map of urgent blood needs and active donors.
 
-   **Frontend (client/.env):**
-   ```env
-   REACT_APP_BASEURL=http://localhost:8080/api/v1
-   ```
+Technology used:
+- Leaflet
+- OpenStreetMap tiles
+- JavaScript geolocation and polling logic
 
-### Running the Application
+## 4. Inventory Management
 
-```bash
-# Start both together
-npm start
+Implemented in:
+- `controllers/inventoryController.js`
+- `models/inventoryModel.js`
+- `routes/inventoryRoutes.js`
+- `config/db.js`
 
-# Or separately
-npm run server   # backend
-npm run client   # frontend
-```
+How it works:
+- Inventory is stored in the `inventory` table with entries such as:
+  - inventoryType (`in` or `out`)
+  - bloodGroup
+  - quantity
+  - organisation/hospital/donor reference
+  - timestamps
+- Inventory is updated when blood is donated, used, or transferred.
+- Organisations and hospitals can check stock levels and recent movement data.
+- The app calculates available blood by subtracting outgoing records from incoming records.
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8080/api/v1
+## 5. Analytics and Dashboard Statistics
 
-> SQLite database file is created automatically on first run. No external database setup needed.
+Implemented in:
+- `controllers/analyticsController.js`
+- `routes/analyticsRoutes.js`
 
-### Deployment
-- Backend: Render
-- Frontend: Netlify
+How it works:
+- The app aggregates data from SQLite tables using SQL queries.
+- It calculates:
+  - total donors, hospitals, organisations
+  - total inventory in and out
+  - available blood count
+  - pending, accepted, and completed requests
+  - blood-group-wise inventory breakdown
+- These metrics are exposed to the frontend dashboard and displayed using cards or charts.
+
+## 6. AI-Powered Features
+
+Implemented in:
+- `controllers/ai/`
+- `routes/aiRoutes.js`
+
+### 6.1 Smart Donor Matching
+File:
+- `controllers/ai/donorMatchingController.js`
+
+How it works:
+- The system evaluates donors using attributes like:
+  - compatible blood type
+  - distance from patient/request
+  - availability status
+  - historical donation activity
+- Results are ranked and returned to the frontend for recommendation.
+
+### 6.2 Blood Demand Prediction
+File:
+- `controllers/ai/predictionController.js`
+
+How it works:
+- Using recent inventory and request history, the app calculates a moving average trend.
+- It predicts future demand for each blood group over a selected number of days.
+- Based on the result, it creates alert levels such as low, moderate, or critical.
+
+### 6.3 Inventory Optimization
+File:
+- `controllers/ai/predictionController.js`
+
+How it works:
+- The system evaluates stock thresholds and warning levels for each blood type.
+- It suggests whether inventory should be increased, maintained, or monitored closely.
+- This helps reduce shortages and wastage.
+
+### 6.4 AI Chatbot
+File:
+- `controllers/ai/chatbotController.js`
+
+How it works:
+- The chatbot answers common blood donation questions using rule-based logic and contextual responses.
+- It understands user intent around topics like:
+  - blood donation eligibility
+  - blood group compatibility
+  - emergency response guidance
+  - general platform usage
+
+## 7. Security and Reliability
+
+Implemented in:
+- `middleware/securityMiddleware.js`
+- `server.js`
+- `middleware/validationMiddleware.js`
+
+Security features include:
+- `helmet` to set secure HTTP headers
+- `cors` to allow controlled frontend access
+- `express-rate-limit` to block excessive requests and brute-force login attempts
+- JWT authentication for protected APIs
+- `bcryptjs` password hashing
+- validation checks for IDs, emails, coordinates, and request payload structure
+
+## 8. Backend Architecture
+
+The project follows a modular backend structure:
+- `config/` → database and setup logic
+- `controllers/` → business logic
+- `routes/` → API route definitions
+- `middleware/` → auth, validation, and security
+- `models/` → data model abstractions
+- `server.js` → app bootstrap and route registration
+
+This keep the code clean and makes it easier to maintain the app as it grows.
 
 ## Project Structure
 
-```
+```bash
 Rakt-Setu/
-├── client/                     # React frontend
-│   ├── src/
-│   └── public/
+├── client/                     # Frontend React app
+│   ├── public/
+│   └── src/
 ├── config/
-│   └── db.js                   # SQLite connection + table setup
+│   └── db.js                  # SQLite configuration and schema setup
 ├── controllers/
 │   ├── ai/
 │   │   ├── chatbotController.js
@@ -132,32 +240,107 @@ Rakt-Setu/
 │   └── requestController.js
 ├── middleware/
 │   ├── authMiddleware.js
-│   ├── adminMiddleware.js
-│   └── securityMiddleware.js
+│   ├── securityMiddleware.js
+│   ├── validationMiddleware.js
+│   └── errorMiddleware.js
 ├── models/
 │   ├── inventoryModel.js
 │   └── userModel.js
 ├── routes/
-│   ├── aiRoutes.js
 │   ├── adminRoutes.js
+│   ├── aiRoutes.js
 │   ├── analyticsRoutes.js
 │   ├── authRoute.js
 │   ├── inventoryRoutes.js
 │   └── requestRoutes.js
+├── .env
+├── .env.example
+├── package.json
 ├── server.js
-└── package.json
+├── rakt-setu.db
+├── README.md
+└── seedData.js
 ```
 
-## Screenshots
+## Setup Instructions
 
-<img width="1425" height="798" alt="Screenshot 2026-04-11 at 11 15 34 AM" src="https://github.com/user-attachments/assets/5fc809b5-8ad6-48c3-adc2-051e1477e9a2" />
-<img width="1464" height="792" alt="Screenshot 2026-05-05 at 12 12 44 PM" src="https://github.com/user-attachments/assets/9b6021ea-2ca6-4e48-9be0-13b200fa9571" />
-<img width="1468" height="867" alt="Screenshot 2026-04-14 at 11 41 01 PM" src="https://github.com/user-attachments/assets/a4501e4f-d265-4bee-b563-4279e57288da" />
-<img width="1469" height="866" alt="Screenshot 2026-04-14 at 11 40 05 PM" src="https://github.com/user-attachments/assets/5013228a-47d8-48f9-9590-6aa8b10457a3" />
-<img width="1464" height="868" alt="Screenshot 2026-04-14 at 11 39 25 PM" src="https://github.com/user-attachments/assets/55ff9feb-af70-4720-af9e-ed914c91308f" />
-<img width="1470" height="866" alt="Screenshot 2026-04-14 at 11 38 02 PM" src="https://github.com/user-attachments/assets/866ef72c-7a38-4bb1-8019-fac1826466cc" />
-<img width="1456" height="867" alt="Screenshot 2026-04-14 at 11 37 36 PM" src="https://github.com/user-attachments/assets/8b80efda-fc9e-484d-8b03-0f01e545ecd3" />
-<img width="1468" height="798" alt="Screenshot 2026-05-05 at 12 01 40 PM" src="https://github.com/user-attachments/assets/975a346f-e464-4bb6-ac16-debf98e19234" />
-<img width="1464" height="793" alt="Screenshot 2026-05-05 at 12 01 26 PM" src="https://github.com/user-attachments/assets/82419ebc-70ec-4c7e-bee8-4d2a7a769406" />
+### Prerequisites
+- Node.js (v18 or later recommended)
+- npm
 
+### 1. Install dependencies
+
+```bash
+git clone <repository-url>
+cd Rakt-Setu
+npm install
+```
+
+### 2. Install frontend dependencies
+
+```bash
+cd client
+npm install
+cd ..
+```
+
+### 3. Configure environment variables
+
+Create a `.env` file in the root with the following:
+
+```env
+PORT=8080
+DEV_MODE=development
+JWT_SECRET=your_secret_key
+JWT_EXPIRE=7d
+ALLOWED_ORIGINS=http://localhost:3000
+RATE_LIMIT_MAX=1000
+```
+
+Frontend `.env` in `client/.env`:
+
+```env
+REACT_APP_BASEURL=http://localhost:8080/api/v1
+```
+
+### 4. Start the app
+
+```bash
+npm start
+```
+
+This runs both backend and frontend together.
+
+Alternative:
+
+```bash
+npm run server
+npm run client
+```
+
+### 5. Access the application
+- Frontend: `http://localhost:3000`
+- Backend API: `http://localhost:8080/api/v1`
+
+## Deployment
+
+This application is designed to be deployable to cloud services such as:
+- Render for backend
+- Netlify or Vercel for frontend
+- SQLite file storage can be used in a simple hosted environment, though production environments may benefit from migration to PostgreSQL later
+
+## Future Improvements
+
+- Real SMS/email notification service
+- Advanced AI engine with actual ML models
+- Better dashboard visualizations and charts
+- Chatbot with NLP and external knowledge
+- Donor reminders and recurring donation scheduling
+- Multi-language support
+
+## Conclusion
+
+Rakt-Setu is a complete blood donation management system designed to solve real-world coordination problems for urgent blood needs. It combines robust backend logic, location-based donor matching, SQLite persistence, and AI powered analytics to provide a reliable and useful healthcare support application.
+
+This project is suitable for demonstration, academic use, or as a strong starting point for a real-world donation platform.
 
