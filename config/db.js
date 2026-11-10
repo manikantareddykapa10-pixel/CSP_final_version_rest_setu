@@ -3,7 +3,9 @@ const path = require('path');
 const crypto = require('crypto');
 const colors = require('colors');
 
-const DB_PATH = path.join(__dirname, '..', 'rakt-setu.db');
+const DB_PATH = process.env.VERCEL
+  ? path.join(require('os').tmpdir(), 'rakt-setu.db')
+  : path.join(__dirname, '..', 'rakt-setu.db');
 let db;
 
 function getDb() {

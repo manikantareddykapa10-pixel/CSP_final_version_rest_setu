@@ -56,6 +56,9 @@ app.use('/api/v1/requests', require('./routes/requestRoutes.js'));
 app.use(notFound);
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 8080;
+if (require.main === module) {
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, () => console.log(`Server running in ${process.env.DEV_MODE} on ${PORT}`.bgBlue.white));
+}
 
-app.listen(PORT, ()=> console.log(`Server running in ${process.env.DEV_MODE} on ${process.env.PORT}`.bgBlue.white ));
+module.exports = app;

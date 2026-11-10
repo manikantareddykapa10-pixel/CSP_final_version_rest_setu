@@ -324,10 +324,7 @@ npm run client
 
 ## Deployment
 
-This application is designed to be deployable to cloud services such as:
-- Render for backend
-- Netlify or Vercel for frontend
-- SQLite file storage can be used in a simple hosted environment, though production environments may benefit from migration to PostgreSQL later
+The repository includes a Vercel configuration for deploying the React frontend and Express API together. Set `JWT_SECRET` as a Vercel environment variable before using authentication. The SQLite database is placed in the function's temporary directory on Vercel, so records may be lost when a function instance is recycled; use a persistent managed database for real use.
 
 ## Future Improvements
 
@@ -343,4 +340,3 @@ This application is designed to be deployable to cloud services such as:
 Rakt-Setu is a complete blood donation management system designed to solve real-world coordination problems for urgent blood needs. It combines robust backend logic, location-based donor matching, SQLite persistence, and AI powered analytics to provide a reliable and useful healthcare support application.
 
 This project is suitable for demonstration, academic use, or as a strong starting point for a real-world donation platform.
-
