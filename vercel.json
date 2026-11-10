@@ -1,11 +1,27 @@
 {
-  "buildCommand": "npm run build --prefix client",
-  "installCommand": "npm install && npm install --prefix client",
-  "outputDirectory": "client/build",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "framework": "express"
+    },
+    "client": {
+      "root": "client",
+      "framework": "create-react-app"
+    }
+  },
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "app"
+      }
+    },
+    {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": {
+        "service": "client"
+      }
     }
   ]
 }
