@@ -20,7 +20,7 @@ const Register = () => {
         zIndex: 1,
         boxShadow: '2px 0 16px rgba(0,0,0,0.07)'
       }}>
-        <img src="./assets/logo.png" alt="Rakt-Setu" style={{ width: 120, marginBottom: 24 }} />
+        <img src="./assets/logo.png" alt="Blood Bridge" style={{ width: 120, marginBottom: 24 }} />
         {error && <div className="alert alert-danger py-2">{error}</div>}
         {loading ? (
           <div className="d-flex justify-content-center">
@@ -47,7 +47,7 @@ const Register = () => {
           color: 'white',
           textShadow: '0 2px 8px rgba(0,0,0,0.7)'
         }}>
-          <h2 style={{ fontWeight: 800 }}>Join Rakt Setu.</h2>
+          <h2 style={{ fontWeight: 800 }}>Join Blood Bridge.</h2>
           <p style={{ fontSize: 18 }}>Be the bridge between life and hope.</p>
         </div>
       </div>

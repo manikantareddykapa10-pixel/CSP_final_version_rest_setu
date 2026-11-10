@@ -1,5 +1,5 @@
 const express = require('express');
-const { registerController,loginController,currentUserController, updateLocationController } = require('../controllers/authController');
+const { registerController,loginController,currentUserController, updateLocationController, updateProfileController } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 const { registerValidation, loginValidation } = require('../middleware/validationMiddleware');
 const { authLimiter } = require('../middleware/securityMiddleware');
@@ -17,6 +17,7 @@ router.get('/current-user', authMiddleware, currentUserController );
 
 //UPDATE LOCATION || PATCH
 router.patch('/update-location', authMiddleware, updateLocationController);
+router.patch('/update-profile', authMiddleware, updateProfileController);
 
 
 module.exports =router;

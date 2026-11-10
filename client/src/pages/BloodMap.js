@@ -6,6 +6,9 @@ import toast from 'react-hot-toast';
 
 const BLOOD_GROUPS = ['All', 'O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 const DEFAULT_CENTER = [28.6692, 77.4538]; // Ghaziabad
+const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, character => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+}[character]));
 
 const BloodMap = () => {
   const { user } = useSelector(state => state.auth);
@@ -80,9 +83,15 @@ const BloodMap = () => {
 
     const isDonor = user?.role === 'donar';
 
+    const acceptedDonorIds = new Set(
+      mapData.requests.filter(request => request.status === 'accepted' && request.acceptedDonor)
+        .map(request => request.acceptedDonor.id)
+    );
+
     // Donor markers (blue)
     mapData.donors.forEach(d => {
       if (filter !== 'All' && d.bloodGroup !== filter) return;
+      if (acceptedDonorIds.has(d.id)) return;
       const marker = L.circleMarker([d.lat, d.lng], {
         radius: 13, fillColor: '#1a73e8', color: '#0d47a1', weight: 2, fillOpacity: 0.85
       });
@@ -95,6 +104,30 @@ const BloodMap = () => {
           Status: <span style="color:${d.isAvailable ? 'green' : 'gray'}">${d.isAvailable ? '✅ Available' : '⏸ Unavailable'}</span>
         </div>
       `);
+      markersLayer.current.addLayer(marker);
+    });
+
+    // Accepted donor markers (green) with contact profile cards
+    mapData.requests.forEach(request => {
+      if (request.status !== 'accepted' || !request.acceptedDonor) return;
+      const donor = request.acceptedDonor;
+      if (filter !== 'All' && donor.bloodGroup !== filter) return;
+      if (donor.lat == null || donor.lng == null) return;
+      const marker = L.circleMarker([donor.lat, donor.lng], {
+        radius: 14, fillColor: '#2e7d32', color: '#ffffff', weight: 3, fillOpacity: 1
+      });
+      const image = donor.profilePicture
+        ? `<img src="${escapeHtml(donor.profilePicture)}" alt="Donor profile" style="width:72px;height:72px;object-fit:cover;border-radius:50%;display:block;margin:0 auto 8px">`
+        : `<div style="width:72px;height:72px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 8px">🩸</div>`;
+      marker.bindPopup(`
+        <div style="min-width:190px;text-align:center">
+          ${image}
+          <strong style="font-size:16px;color:#2e7d32">${escapeHtml(donor.name || 'Accepted Donor')}</strong><br/>
+          Blood Group: <b>${escapeHtml(donor.bloodGroup || 'Not set')}</b><br/>
+          Phone: <b><a href="tel:${escapeHtml(donor.phone || '')}">${escapeHtml(donor.phone || 'Not provided')}</a></b><br/>
+          <span style="display:inline-block;margin-top:8px;padding:3px 10px;border-radius:12px;background:#e8f5e9;color:#2e7d32;font-weight:bold">Accepted Request</span>
+        </div>
+      `, { maxWidth: 230 });
       markersLayer.current.addLayer(marker);
     });
 
@@ -172,7 +205,7 @@ const BloodMap = () => {
         <div className="d-flex gap-3 mb-2" style={{ fontSize: '13px' }}>
           <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#1a73e8', marginRight: 4 }}></span>Donor</span>
           <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#d32f2f', marginRight: 4 }}></span>Pending Request</span>
-          <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#f57c00', marginRight: 4 }}></span>Accepted (In Progress)</span>
+          <span><span style={{ display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#2e7d32', marginRight: 4 }}></span>Accepted Donor</span>
         </div>
 
         {/* Map container */}

@@ -14,7 +14,7 @@ const AdminHome = () => {
               <h1 className="mb-2">
                 Welcome <span className="fw-bold">{user?.name}</span>
               </h1>
-              <h4 className="mb-0">Rakt-Setu Blood Bank Management Dashboard</h4>
+              <h4 className="mb-0">Blood Bridge Blood Bank Management Dashboard</h4>
             </div>
           </div>
         </div>
@@ -192,7 +192,7 @@ const AdminHome = () => {
                   Our Mission
                 </h5>
                 <p className="mb-0 lead">
-                  Rakt-Setu connects donors, organizations, and hospitals to ensure blood reaches those who need it most. 
+                  Blood Bridge connects donors, organizations, and hospitals to ensure blood reaches those who need it most. 
                   Every donation saves lives, and every efficient distribution makes a difference. 
                   Together, we're building a network where <strong>no one waits for blood when life depends on it</strong>.
                 </p>

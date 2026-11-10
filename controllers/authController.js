@@ -114,4 +114,53 @@ const updateLocationController = async (req, res) => {
   }
 };
 
-module.exports = {registerController, loginController, currentUserController, updateLocationController};
+const updateProfileController = async (req, res) => {
+  try {
+    const { lat, lng, profilePicture } = req.body;
+    const db = require('../config/db').getDb();
+    const allowedFields = ['name', 'email', 'phone', 'address', 'bloodGroup', 'isAvailable'];
+    const updates = [];
+    const values = [];
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        if (field === 'email' && !req.body.email.includes('@')) {
+          return res.status(400).json({ success: false, message: 'Invalid email address' });
+        }
+        if (field === 'bloodGroup' && !['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].includes(req.body[field])) {
+          return res.status(400).json({ success: false, message: 'Invalid blood group' });
+        }
+        updates.push(`${field} = ?`);
+        values.push(field === 'isAvailable' ? (req.body[field] ? 1 : 0) : req.body[field]);
+      }
+    }
+    if (updates.length) {
+      updates.push('updatedAt = ?');
+      values.push(new Date().toISOString(), req.body.userId);
+      db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE _id = ?`).run(...values);
+    }
+
+    if (lat !== undefined && lng !== undefined) {
+      if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) {
+        return res.status(400).json({ success: false, message: 'Invalid location coordinates' });
+      }
+      db.prepare('UPDATE users SET location_lat = ?, location_lng = ?, updatedAt = ? WHERE _id = ?')
+        .run(Number(lat), Number(lng), new Date().toISOString(), req.body.userId);
+    }
+
+    if (profilePicture !== undefined) {
+      if (typeof profilePicture !== 'string' || profilePicture.length > 3000000 ||
+          (profilePicture && !profilePicture.startsWith('data:image/'))) {
+        return res.status(400).json({ success: false, message: 'Invalid profile picture' });
+      }
+      db.prepare('UPDATE users SET profilePicture = ?, updatedAt = ? WHERE _id = ?')
+        .run(profilePicture || null, new Date().toISOString(), req.body.userId);
+    }
+
+    const user = await userModel.findOne({ _id: req.body.userId });
+    return res.status(200).json({ success: true, message: 'Profile updated', user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Error updating profile', error: error.message });
+  }
+};
+
+module.exports = {registerController, loginController, currentUserController, updateLocationController, updateProfileController};

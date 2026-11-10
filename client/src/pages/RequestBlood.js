@@ -7,6 +7,17 @@ import moment from 'moment';
 
 const BLOOD_GROUPS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
+const parseDocuments = value => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 const statusBadge = (status) => {
   const map = {
     pending: { bg: '#fff3e0', color: '#e65100', label: '⏳ Pending' },
@@ -27,6 +38,9 @@ const RequestBlood = () => {
   const [bloodGroup, setBloodGroup] = useState('O+');
   const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
+  const [patientName, setPatientName] = useState('');
+  const [patientPhoto, setPatientPhoto] = useState('');
+  const [patientDocuments, setPatientDocuments] = useState([]);
   const [location, setLocation] = useState(null);
   const [geoLoading, setGeoLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -81,17 +95,60 @@ const RequestBlood = () => {
     );
   };
 
+  const readImage = (file, maxSize) => new Promise((resolve, reject) => {
+    if (!file?.type.startsWith('image/')) return reject(new Error('Please select image files only.'));
+    if (file.size > maxSize) return reject(new Error(`Each image must be smaller than ${maxSize / 1024 / 1024} MB.`));
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Could not read the selected image.'));
+    reader.readAsDataURL(file);
+  });
+
+  const selectPatientPhoto = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      setPatientPhoto(await readImage(file, 2 * 1024 * 1024));
+    } catch (error) {
+      toast.error(error.message);
+      event.target.value = '';
+    }
+  };
+
+  const selectPatientDocuments = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (patientDocuments.length + files.length > 5) {
+      toast.error('A maximum of 5 document images can be attached.');
+      event.target.value = '';
+      return;
+    }
+    try {
+      const documents = await Promise.all(files.map(async file => ({
+        name: file.name,
+        data: await readImage(file, 1024 * 1024)
+      })));
+      setPatientDocuments(previous => [...previous, ...documents]);
+    } catch (error) {
+      toast.error(error.message);
+    }
+    event.target.value = '';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!location) return toast.error('Please set your location first');
+    if (!patientName.trim()) return toast.error('Please enter the patient name');
+    if (!patientPhoto) return toast.error('Please add a patient photo');
     setSubmitting(true);
     try {
       const { data } = await API.post('/requests/create', {
-        bloodGroup, location_lat: location.lat, location_lng: location.lng, address, notes
+        bloodGroup, location_lat: location.lat, location_lng: location.lng, address, notes,
+        patientName, patientPhoto, patientDocuments
       });
       if (data?.success) {
         toast.success('Blood request posted! Donors will be notified.');
-        setAddress(''); setNotes(''); setLocation(null);
+        setAddress(''); setNotes(''); setPatientName(''); setPatientPhoto('');
+        setPatientDocuments([]); setLocation(null);
         fetchMyRequests();
       } else {
         toast.error(data?.message || 'Error posting request');
@@ -164,6 +221,41 @@ const RequestBlood = () => {
                   <label className="form-label fw-semibold">Notes (optional)</label>
                   <textarea className="form-control" rows={2} placeholder="Patient condition, urgency, units needed..." value={notes} onChange={e => setNotes(e.target.value)} />
                 </div>
+                <div className="col-md-6">
+                  <label className="form-label fw-semibold">Patient Name *</label>
+                  <input className="form-control" required value={patientName} onChange={e => setPatientName(e.target.value)} placeholder="Enter patient name" />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label fw-semibold">Patient Photo *</label>
+                  <div className="d-flex align-items-center gap-2">
+                    {patientPhoto && <img src={patientPhoto} alt="Patient preview" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8 }} />}
+                    <label className="btn btn-outline-danger mb-0">
+                      <i className="fa-solid fa-camera me-1"></i>{patientPhoto ? 'Change Photo' : 'Add Photo'}
+                      <input type="file" accept="image/*" className="d-none" onChange={selectPatientPhoto} />
+                    </label>
+                  </div>
+                </div>
+                <div className="col-12">
+                  <label className="form-label fw-semibold">Patient Document Images</label>
+                  <div>
+                    <label className="btn btn-outline-secondary btn-sm mb-2">
+                      <i className="fa-solid fa-file-image me-1"></i>Add Document Images
+                      <input type="file" accept="image/*" multiple className="d-none" onChange={selectPatientDocuments} />
+                    </label>
+                    <span className="text-muted ms-2" style={{ fontSize: 12 }}>Maximum 5 images, 1 MB each</span>
+                  </div>
+                  {patientDocuments.length > 0 && (
+                    <div className="d-flex flex-wrap gap-2">
+                      {patientDocuments.map((document, index) => (
+                        <div key={`${document.name}-${index}`} className="position-relative">
+                          <img src={document.data} alt={document.name} style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, border: '1px solid #ddd' }} />
+                          <button type="button" className="btn btn-sm btn-danger position-absolute top-0 end-0 p-0" style={{ width: 22, height: 22 }}
+                            onClick={() => setPatientDocuments(previous => previous.filter((_, i) => i !== index))}>×</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <div className="col-12">
                   <button type="submit" className="btn btn-danger px-4" disabled={submitting || !location}>
                     {submitting ? <span className="spinner-border spinner-border-sm me-1"></span> : null}
@@ -203,6 +295,21 @@ const RequestBlood = () => {
 
               {r.address && <p className="mb-1 text-muted" style={{ fontSize: 13 }}><i className="fa-solid fa-location-dot me-1"></i>{r.address}</p>}
               {r.notes && <p className="mb-2 text-muted" style={{ fontSize: 13 }}>{r.notes}</p>}
+              {r.patientName && (
+                <div className="d-flex align-items-center gap-2 mt-2 p-2 rounded" style={{ background: '#fff8f8' }}>
+                  {r.patientPhoto && <img src={r.patientPhoto} alt={r.patientName} style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: 8 }} />}
+                  <div><b>Patient:</b> {r.patientName}</div>
+                </div>
+              )}
+              {parseDocuments(r.patientDocuments).length > 0 && (
+                <div className="d-flex flex-wrap gap-2 mt-2">
+                  {parseDocuments(r.patientDocuments).map((document, index) => (
+                    <a key={`${document.name}-${index}`} href={document.data} target="_blank" rel="noopener noreferrer">
+                      <img src={document.data} alt={document.name || 'Patient document'} style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 6, border: '1px solid #ddd' }} />
+                    </a>
+                  ))}
+                </div>
+              )}
 
               {/* Contact reveal when accepted */}
               {r.status === 'accepted' && r.donorName && (

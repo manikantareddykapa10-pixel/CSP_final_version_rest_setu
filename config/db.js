@@ -33,6 +33,9 @@ function connectDB() {
       location_lng REAL,
       address TEXT,
       notes TEXT,
+      patientName TEXT,
+      patientPhoto TEXT,
+      patientDocuments TEXT,
       createdAt TEXT NOT NULL,
       updatedAt TEXT NOT NULL
     );
@@ -51,6 +54,7 @@ function connectDB() {
       bloodGroup TEXT CHECK(bloodGroup IN ('O+','O-','AB+','AB-','A+','A-','B+','B-') OR bloodGroup IS NULL),
       location_lat REAL,
       location_lng REAL,
+      profilePicture TEXT,
       lastDonation TEXT,
       totalDonations INTEGER DEFAULT 0,
       isAvailable INTEGER DEFAULT 1,
@@ -71,6 +75,23 @@ function connectDB() {
       updatedAt TEXT NOT NULL
     );
   `);
+
+  const userColumns = db.prepare("PRAGMA table_info(users)").all();
+  if (!userColumns.some(column => column.name === 'profilePicture')) {
+    db.exec('ALTER TABLE users ADD COLUMN profilePicture TEXT');
+  }
+
+  const requestColumns = db.prepare("PRAGMA table_info(requests)").all();
+  const requestMigrations = {
+    patientName: 'TEXT',
+    patientPhoto: 'TEXT',
+    patientDocuments: 'TEXT'
+  };
+  Object.entries(requestMigrations).forEach(([name, type]) => {
+    if (!requestColumns.some(column => column.name === name)) {
+      db.exec(`ALTER TABLE requests ADD COLUMN ${name} ${type}`);
+    }
+  });
 
   console.log(`connected to SQLite database`.bgCyan.white);
 }

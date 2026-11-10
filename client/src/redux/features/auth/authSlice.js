@@ -2,10 +2,16 @@ import { createSlice } from "@reduxjs/toolkit";
 import { getCurrentUser, userLogin, userRegister } from "./authActions";
 
 const token = localStorage.getItem('token') ? localStorage.getItem('token') : null;
+let cachedUser = null;
+try {
+  cachedUser = JSON.parse(localStorage.getItem('user') || 'null');
+} catch {
+  cachedUser = null;
+}
 
 const initialState = {
   loading: false,
-  user: null,
+  user: cachedUser,
   token,
   error: null,
 };
@@ -13,7 +19,12 @@ const initialState = {
 const authSlice = createSlice({
   name: "auth",
   initialState: initialState,
-  reducers: {},
+  reducers: {
+    updateCurrentUser: (state, { payload }) => {
+      state.user = { ...(state.user || {}), ...(payload || {}) };
+      localStorage.setItem('user', JSON.stringify(state.user));
+    },
+  },
   extraReducers: (builder) => {
     //Login user
     builder.addCase(userLogin.pending, (state) => {
@@ -23,8 +34,9 @@ const authSlice = createSlice({
 
     builder.addCase(userLogin.fulfilled, (state, { payload }) => {
       state.loading = false;
-      state.user = payload.user;
-      state.token = payload.token;
+      state.user = payload?.user || null;
+      state.token = payload?.token || null;
+      localStorage.setItem('user', JSON.stringify(state.user));
     });
 
     builder.addCase(userLogin.rejected, (state, { payload }) => {
@@ -41,7 +53,8 @@ const authSlice = createSlice({
     builder.addCase(userRegister.fulfilled, (state, { payload }) => {
       state.loading = false;
       state.success = true;
-      state.user = payload.user;
+      state.user = payload?.user || null;
+      localStorage.setItem('user', JSON.stringify(state.user));
     });
 
     builder.addCase(userRegister.rejected, (state, { payload }) => {
@@ -58,7 +71,8 @@ const authSlice = createSlice({
     builder.addCase(getCurrentUser.fulfilled, (state, { payload }) => {
       state.loading = false;
       state.success = true;
-      state.user = payload.user;
+      state.user = payload?.user || null;
+      localStorage.setItem('user', JSON.stringify(state.user));
     });
 
     builder.addCase(getCurrentUser.rejected, (state, { payload }) => {
@@ -69,4 +83,5 @@ const authSlice = createSlice({
   },
 });
 
+export const { updateCurrentUser } = authSlice.actions;
 export default authSlice;

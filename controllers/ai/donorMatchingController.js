@@ -98,7 +98,7 @@ const smartDonorMatch = async (req, res) => {
       bloodType,
       location, // { lat, lng }
       urgency = 'medium', // low, medium, high, critical
-      maxDistance = 50, // km
+      maxDistance = 900, // km
       limit = 20
     } = req.body;
 

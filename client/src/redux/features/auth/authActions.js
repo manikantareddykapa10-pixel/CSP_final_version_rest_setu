@@ -55,13 +55,14 @@ export const userRegister = createAsyncThunk(
                 }else{
                     toast.error(data.message,{position:"top-left"});
                 }
+                return data;
 
             }catch(error){
                 if(error.response && error.response.data.message){
                     toast.error(error.response.data.message)
                     return rejectWithValue(error.response.data.message)
                 }else{
-                    toast.error(error.response.data.message)
+                    toast.error(error.message)
                     return rejectWithValue(error.message)
                 }
             }

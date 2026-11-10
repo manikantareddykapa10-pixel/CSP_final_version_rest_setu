@@ -20,7 +20,7 @@ const Login = () => {
         zIndex: 1,
         boxShadow: '2px 0 16px rgba(0,0,0,0.07)'
       }}>
-        <img src="./assets/logo.png" alt="Rakt-Setu" style={{ width: 120, marginBottom: 32 }} />
+        <img src="./assets/logo.png" alt="Blood Bridge" style={{ width: 120, marginBottom: 32 }} />
         {loading ? (
           <div className="d-flex justify-content-center">
             <DNA visible height="200" width="200" ariaLabel="dna-loading" />
